@@ -1,71 +1,67 @@
 "use client";
-
-import React, { useEffect, useState } from "react";
+import Image from "next/image";
+import React, { useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { fetchuser, fetchpayments, initiate } from "@/actions/userserveraction";
 import { ToastContainer, toast } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css';
+import "react-toastify/dist/ReactToastify.css";
 import { Bounce } from "react-toastify";
 
 const PaymentPage = ({ username }) => {
-  const [sdkLoaded, setSdkLoaded] = useState(false); // ✅ added Razorpay SDK loaded flag
-
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    script.onload = () => {
-      console.log("✅ Razorpay SDK loaded");
-      setSdkLoaded(true);
-    };
-    script.onerror = () => {
-      console.error("❌ Razorpay SDK failed to load");
-    };
-    document.body.appendChild(script);
-  }, []);
-
+  const [sdkLoaded, setSdkLoaded] = useState(false);
   const [paymentform, setPaymentForm] = useState({
     name: "",
     message: "",
     amount: "",
   });
-
   const [currentUser, setCurrentUser] = useState({});
   const [payments, setPayments] = useState([]);
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  // ✅ Load Razorpay SDK
   useEffect(() => {
-    getData();
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => setSdkLoaded(true);
+    script.onerror = () => console.error("Failed to load Razorpay SDK");
+    document.body.appendChild(script);
   }, []);
 
-  useEffect(() => {
-    if (searchParams.get("paymentdone") === "true") {
-      toast('Thanks for your donation!', {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-        transition: Bounce,
-      });
-      router.push(`/${username}`);
-    }
-  }, [searchParams, router, username]);
-
-  const getData = async () => {
+  // ✅ Stable getData using useCallback
+  const getData = useCallback(async () => {
     try {
       const user = await fetchuser(username);
       setCurrentUser(user);
       const dbPayments = await fetchpayments(username);
       setPayments(dbPayments);
     } catch (err) {
-      console.error("❌ Failed fetching user/payments", err);
+      console.error("Error fetching user or payments:", err);
     }
-  };
+  }, [username]);
+
+  // ✅ Load user/payment data on mount
+  useEffect(() => {
+    getData();
+  }, [getData]);
+
+  // ✅ Handle redirect success message
+  useEffect(() => {
+    if (searchParams.get("paymentdone") === "true") {
+      toast("Thanks for your donation!", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "light",
+        transition: Bounce,
+      });
+      router.push(`/${username}`);
+    }
+  }, [searchParams, router, username]);
 
   const handleChange = (e) => {
     setPaymentForm({ ...paymentform, [e.target.name]: e.target.value });
@@ -82,40 +78,38 @@ const PaymentPage = ({ username }) => {
       const orderId = res?.id;
 
       const options = {
-key: currentUser.razorpayid || process.env.NEXT_PUBLIC_KEY_ID,
-  amount: amtInPaise,
-  currency: "INR",
-  name: "Buy Me a Chai",
-  description: "Support your favorite creator",
-  image: "https://example.com/your_logo",
-  order_id: orderId,
-  callback_url: `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/api/razorpay`,
-  prefill: {
-    name: paymentform.name,
-    email: "email@example.com",
-    contact: "9999999999",
-  },
-  notes: {
-    name: paymentform.name,
-    message: paymentform.message,
-    amount: amtInPaise / 100, // in rupees
-    to_username: username,    // ✅ this is crucial
-  },
-  theme: {
-    color: "#3399cc",
-  },
-};
+        key: currentUser.razorpayid || process.env.NEXT_PUBLIC_KEY_ID,
+        amount: amtInPaise,
+        currency: "INR",
+        name: "Buy Me a Chai",
+        description: "Support your favorite creator",
+        image: "https://example.com/your_logo",
+        order_id: orderId,
+        callback_url: `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/api/razorpay`,
+        prefill: {
+          name: paymentform.name,
+          email: "email@example.com",
+          contact: "9999999999",
+        },
+        notes: {
+          name: paymentform.name,
+          message: paymentform.message,
+          amount: amtInPaise / 100,
+          to_username: username,
+        },
+        theme: {
+          color: "#3399cc",
+        },
+      };
 
-
-      // ✅ Only open Razorpay if SDK is fully loaded
       if (sdkLoaded && typeof window !== "undefined" && window.Razorpay) {
         const rzp = new window.Razorpay(options);
         rzp.open();
       } else {
-        console.error("⚠ Razorpay SDK not loaded");
+        toast.error("Payment system not ready. Please try again.");
       }
     } catch (err) {
-toast.error("Payment failed. Please try again.");
+      toast.error("Payment failed. Please try again.");
     }
   };
 
@@ -126,25 +120,30 @@ toast.error("Payment failed. Please try again.");
       <div className="min-h-screen">
         {/* Header Cover Image Section */}
         <div className="relative">
-          <img
+          <Image
             className="object-cover w-full h-[350px]"
             src={currentUser.coverpic || "/default-cover.jpg"}
             alt="cover"
+            width={1200}
+            height={350}
           />
           <div className="absolute bottom-[-75px] left-1/2 transform -translate-x-1/2 border-4 border-white rounded-full bg-gray-200 p-2">
-            <img
+            <Image
               className="rounded-full w-[150px] h-[150px] object-cover"
-src={currentUser.coverpic || "/default-cover.jpg"}
+              src={currentUser.coverpic || "/default-cover.jpg"}
               alt="avatar"
+              width={150}
+              height={150}
             />
           </div>
         </div>
 
         <div className="mt-24 flex flex-col items-center gap-2 px-4">
           <div className="font-bold text-lg">@{username}</div>
-          <div className="text-gray-500 text-sm">
-            Lets help {username} with a cup of chai!
-          </div>
+         <div className="text-gray-500 text-sm">
+  {`Let's help ${username} with a cup of chai!`}
+</div>
+
           <div className="text-gray-500 text-sm">
             {payments.length} supporters, ₹{payments.reduce((a, b) => a + b.amount, 0)} raised
           </div>
@@ -159,10 +158,17 @@ src={currentUser.coverpic || "/default-cover.jpg"}
                 ) : (
                   payments.map((p, idx) => (
                     <li key={idx} className="my-2 flex gap-2 items-center">
-                      <img src="/prop.gif" className="w-16 rounded-full" alt="" />
+                      <Image
+                        src="/prop.gif"
+                        className="w-16 rounded-full"
+                        alt="supporter"
+                        width={64}
+                        height={64}
+                      />
                       <span>
-                        {p.name} donated <span className="font-bold">₹{p.amount}</span> with message "{p.message}"
-                      </span>
+  {p.name} donated <span className="font-bold">₹{p.amount}</span> with message <q>{p.message}</q>
+</span>
+
                     </li>
                   ))
                 )}
@@ -211,24 +217,14 @@ src={currentUser.coverpic || "/default-cover.jpg"}
                 </button>
               </div>
 
-              {/* Suggested Payments */}
               <div className="flex gap-2 mt-5">
-                <button
-                  className="bg-sky-600 p-3 rounded-lg"
-                  onClick={() => pay(10000)}
-                >
+                <button className="bg-sky-600 p-3 rounded-lg" onClick={() => pay(10000)}>
                   Pay ₹100
                 </button>
-                <button
-                  className="bg-sky-600 p-3 rounded-lg"
-                  onClick={() => pay(20000)}
-                >
+                <button className="bg-sky-600 p-3 rounded-lg" onClick={() => pay(20000)}>
                   Pay ₹200
                 </button>
-                <button
-                  className="bg-sky-600 p-3 rounded-lg"
-                  onClick={() => pay(30000)}
-                >
+                <button className="bg-sky-600 p-3 rounded-lg" onClick={() => pay(30000)}>
                   Pay ₹300
                 </button>
               </div>

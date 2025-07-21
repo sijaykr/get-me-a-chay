@@ -4,7 +4,7 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-
+import Image from "next/image";
 const Navbar = () => {
   const { data: session, status } = useSession();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -13,7 +13,7 @@ const Navbar = () => {
     <nav className='bg-gray-900 shadow-xl shadow-white text-white flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 py-2 md:h-16'>
       {/* Logo */}
       <Link href="/" className="logo font-bold text-2xl flex items-center gap-2 mb-2 sm:mb-0">
-        <img className="rounded-b-xl" src="/tea1.gif" width={44} alt="Chai Logo" />
+        <Image className="rounded-b-xl" src="/tea1.gif" width={44} alt="Chai Logo" />
         <span>Get Me a Chai</span>
       </Link>
 

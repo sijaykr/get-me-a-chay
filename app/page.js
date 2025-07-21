@@ -8,7 +8,7 @@ export default function Home() {
         <div className="font-bold md:text-5xl flex justify-center items-center gap-4 text-xl">
           Buy Me a Chai
           <span>
-            <img
+            <Image
               className="rounded-b-xl invertImg"
               src="/tea1.gif"
               width={88}
@@ -52,7 +52,8 @@ export default function Home() {
               key={i}
               className="items space-y-3 flex flex-col items-center justify-center text-center max-w-xs"
             >
-              <img
+              <Image
+                
                 className="w-16 h-16 rounded-full bg-slate-400 object-cover"
                 src="/main.gif"
                 alt="main"
@@ -76,7 +77,7 @@ export default function Home() {
               key={i}
               className="items space-y-3 flex flex-col items-center justify-center text-center max-w-xs"
             >
-              <img
+              <Image
                 className="w-16 h-16 rounded-full bg-slate-400 object-cover"
                 src="/main.gif"
                 alt="main"

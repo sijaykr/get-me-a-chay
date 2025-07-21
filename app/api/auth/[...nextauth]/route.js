@@ -40,7 +40,6 @@ export const authoptions =  NextAuth({
          if(account.provider == "github") { 
           await connectDB()
            // Check if the user already exists in the database
-           console.log("🔑 Email from GitHub:", user.email)
 
           const currentUser =  await User.findOne({email: user.email}) 
           if(!currentUser){

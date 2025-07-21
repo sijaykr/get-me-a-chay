@@ -2,18 +2,21 @@
 import React, {useEffect} from 'react'
 import { useSession, signIn, signOut } from "next-auth/react"
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 
 const Login = () => {
   const { data: session } = useSession()
   const router = useRouter()
 
+  
+
+
   useEffect(() => {
-    document.title = "Login - Get Me A Chai" 
-    console.log(session)
-    if (session) {
-      router.push('/dashboard')
-    }
-  }, [])
+  document.title = "Login - Get Me A Chai" 
+  if (session) {
+    router.push('/dashboard');
+  }
+}, [session, router]);
 
   return (
     <div className='text-white py-14 container mx-auto'>

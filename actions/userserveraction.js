@@ -7,15 +7,12 @@ import User from "@/models/User";
 import mongoose from "mongoose";
 
 export const initiate = async (amount, to_username, paymentform) => {
-  console.log("🔍 to_username received in initiate:", to_username);
 
   await connectDB();
 
   const collections = await mongoose.connection.db.listCollections().toArray();
-  console.log("✅ Collections in DB:", collections.map(c => c.name));
 
   const user = await User.findOne({ username: to_username });
-  console.log("🎯 User fetched:", user);
 
   if (!user) {
     throw new Error(`User not found: ${to_username}`);
@@ -33,9 +30,6 @@ export const initiate = async (amount, to_username, paymentform) => {
       ? user.razorpaysecret || process.env.RAZORPAY_LIVE_KEY_SECRET
       : process.env.RAZORPAY_TEST_KEY_SECRET;
 
-  console.log("🔁 Razorpay Mode:", mode);
-  console.log("✅ Razorpay ID:", razorpayId);
-  console.log("🔐 Razorpay Secret present?", !!razorpaySecret);
 
   if (!razorpayId || !razorpaySecret) {
     throw new Error(`Razorpay credentials not found for user: ${to_username}`);
@@ -66,12 +60,10 @@ export const initiate = async (amount, to_username, paymentform) => {
 };
 
 export const fetchuser = async (username) => {
-  console.log("📌 fetching user:", username);
   await connectDB();
 
   const user = await User.findOne({ username }).lean();
 
-  console.log("🎯 User fetched:", user);
 
   if (!user) throw new Error("User not found");
 

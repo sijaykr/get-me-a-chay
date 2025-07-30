@@ -1,4 +1,4 @@
-import mongoose from "mongoose"; // ✅ Required
+import mongoose from "mongoose"; 
 import { Schema,model } from "mongoose";
 const PaymentSchema = new mongoose.Schema({
   name: String,

@@ -28,11 +28,17 @@ export const POST = async (req) => {
     );
   }
 
+//const isValid = validatePaymentVerification(
+  //  { order_id: razorpay_order_id, payment_id: razorpay_payment_id },
+    //razorpay_signature,
+    //user.razorpaysecret
+  //);
   const isValid = validatePaymentVerification(
-    { order_id: razorpay_order_id, payment_id: razorpay_payment_id },
-    razorpay_signature,
-    user.razorpaysecret
-  );
+  { order_id: razorpay_order_id, payment_id: razorpay_payment_id },
+  razorpay_signature,
+  user.razorpaysecret
+);
+
 
   if (!isValid) {
     return NextResponse.json(
@@ -42,13 +48,14 @@ export const POST = async (req) => {
   }
 
   // ✅ Just mark as done, because name, message, amount already saved in DB
-  const updated = await Payment.findOneAndUpdate(
-    { oid: razorpay_order_id },
-    { done: true },
-    { new: true }
-  );
+  
+  await Payment.findOneAndUpdate(
+  { oid: razorpay_order_id },
+  { done: true },
+  { new: true }
+);
 
-  return NextResponse.redirect(
-    `${process.env.NEXT_PUBLIC_URL}/${updated.to_username}?paymentdone=true`
-  );
+return NextResponse.redirect(`${process.env.NEXT_PUBLIC_URL}/${updated.to_username}?paymentdone=true`);
+
+  
 };

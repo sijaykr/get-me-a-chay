@@ -1,4 +1,12 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
+  images: {
+    domains: [
+      "avatars.githubusercontent.com",
+      "opengraph.githubassets.com",
+      "github.com", // in case you ever use github.com directly
+    ],
+  },
+};
 
-export default nextConfig;
+module.exports = nextConfig;

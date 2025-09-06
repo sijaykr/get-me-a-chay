@@ -6,6 +6,7 @@ import connectDB from "@/db/connectDB";
 import User from "@/models/User";
 import mongoose from "mongoose";
 
+// Initiate Razorpay payment
 export const initiate = async (amount, to_username, paymentform) => {
   await connectDB();
 
@@ -51,23 +52,21 @@ export const initiate = async (amount, to_username, paymentform) => {
   return order;
 };
 
+// Fetch user with profilepic, coverpic, and Razorpay keys
 export const fetchuser = async (username) => {
   await connectDB();
 
   let user = await User.findOne({ username }).lean();
   if (!user) throw new Error("User not found");
 
-  // --- Step 1: Auto-fill profilepic/coverpic from GitHub ---
-  if (!user.profilepic || !user.coverpic) {
+  // Auto-fill profilepic/coverpic from GitHub if missing or empty
+  if (!user.profilepic?.trim() || !user.coverpic?.trim()) {
     try {
       const res = await fetch(`https://api.github.com/users/${username}`);
       if (res.ok) {
         const data = await res.json();
-
-        user.profilepic = user.profilepic || data.avatar_url;
-        user.coverpic =
-          user.coverpic || `https://opengraph.githubassets.com/1/${username}`;
-
+        user.profilepic = data.avatar_url;
+        user.coverpic = `https://opengraph.githubassets.com/1/${username}`;
         await User.updateOne(
           { username },
           { profilepic: user.profilepic, coverpic: user.coverpic }
@@ -80,7 +79,7 @@ export const fetchuser = async (username) => {
     }
   }
 
-  // --- Step 2: Auto-fill Razorpay keys if missing ---
+  // Auto-fill Razorpay keys if missing
   user.razorpayid =
     user.razorpayid ||
     (process.env.RAZORPAY_ENV === "live"
@@ -101,6 +100,7 @@ export const fetchuser = async (username) => {
   return JSON.parse(JSON.stringify(user));
 };
 
+// Fetch last 10 successful payments
 export const fetchpayments = async (username) => {
   await connectDB();
 
@@ -112,6 +112,7 @@ export const fetchpayments = async (username) => {
   return JSON.parse(JSON.stringify(payments));
 };
 
+// Update user profile and payments if username changed
 export const updateProfile = async (data, oldusername) => {
   await connectDB();
   const ndata = Object.fromEntries(data);

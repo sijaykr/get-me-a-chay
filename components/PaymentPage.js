@@ -124,7 +124,9 @@ const PaymentPage = ({ username }) => {
         <div className="relative">
           <Image
             className="object-cover w-full h-[350px]"
-            src={currentUser.coverpic || `https://opengraph.githubassets.com/1/${username}`}
+            src={currentUser.coverpic || "/default-cover.jpg"}
+
+           // src={currentUser.coverpic || `https://opengraph.githubassets.com/1/${username}`}
             alt="cover"
             width={1200}
             height={350}
@@ -132,7 +134,9 @@ const PaymentPage = ({ username }) => {
           <div className="absolute bottom-[-75px] left-1/2 transform -translate-x-1/2 border-4 border-white rounded-full bg-gray-200 p-2">
             <Image
               className="rounded-full w-[150px] h-[150px] object-cover"
-              src={currentUser.profilepic || `https://avatars.githubusercontent.com/u/1967963?v=4`}
+              
+
+              src={currentUser.profilepic || "/default-avatar.jpg" || `https://avatars.githubusercontent.com/u/1967963?v=4`}
               alt="avatar"
               width={150}
               height={150}

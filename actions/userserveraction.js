@@ -24,13 +24,19 @@ export const initiate = async (amount, to_username, paymentform) => {
       ? user.razorpaysecret || process.env.RAZORPAY_LIVE_KEY_SECRET
       : process.env.RAZORPAY_TEST_KEY_SECRET;
 
-  if (!razorpayId || !razorpaySecret) {
+  if (!razorpayId || !razorpaySecret)
     throw new Error(`Razorpay credentials not found for user: ${to_username}`);
-  }
 
-  const razorpay = new Razorpay({ key_id: razorpayId, key_secret: razorpaySecret });
+  const razorpay = new Razorpay({
+    key_id: razorpayId,
+    key_secret: razorpaySecret,
+  });
 
-  const options = { amount: Number(amount), currency: "INR", receipt: `receipt_${Date.now()}` };
+  const options = {
+    amount: Number(amount),
+    currency: "INR",
+    receipt: `receipt_${Date.now()}`,
+  };
 
   const order = await razorpay.orders.create(options);
 
@@ -51,14 +57,16 @@ export const fetchuser = async (username) => {
   let user = await User.findOne({ username }).lean();
   if (!user) throw new Error("User not found");
 
-  // ✅ Minimal: fill missing GitHub profile / cover
+  // --- Step 1: Auto-fill profilepic/coverpic from GitHub ---
   if (!user.profilepic || !user.coverpic) {
     try {
       const res = await fetch(`https://api.github.com/users/${username}`);
       if (res.ok) {
         const data = await res.json();
+
         user.profilepic = user.profilepic || data.avatar_url;
-        user.coverpic = user.coverpic || `https://opengraph.githubassets.com/1/${username}`;
+        user.coverpic =
+          user.coverpic || `https://opengraph.githubassets.com/1/${username}`;
 
         await User.updateOne(
           { username },
@@ -72,7 +80,7 @@ export const fetchuser = async (username) => {
     }
   }
 
-  // ✅ Minimal: fill missing Razorpay keys
+  // --- Step 2: Auto-fill Razorpay keys if missing ---
   user.razorpayid =
     user.razorpayid ||
     (process.env.RAZORPAY_ENV === "live"
@@ -113,7 +121,10 @@ export const updateProfile = async (data, oldusername) => {
     if (existingUser) return { error: "Username already exists" };
 
     await User.updateOne({ email: ndata.email }, ndata);
-    await Payment.updateMany({ to_username: oldusername }, { to_username: ndata.username });
+    await Payment.updateMany(
+      { to_username: oldusername },
+      { to_username: ndata.username }
+    );
   } else {
     await User.updateOne({ email: ndata.email }, ndata);
   }

@@ -4,9 +4,9 @@ const nextConfig = {
     domains: [
       "avatars.githubusercontent.com",
       "opengraph.githubassets.com",
-      "github.com", // in case you ever use github.com directly
+      "github.com",
     ],
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;

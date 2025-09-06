@@ -62,13 +62,59 @@ export const initiate = async (amount, to_username, paymentform) => {
 export const fetchuser = async (username) => {
   await connectDB();
 
-  const user = await User.findOne({ username }).lean();
-
+  let user = await User.findOne({ username }).lean();
 
   if (!user) throw new Error("User not found");
 
+  // --- Step 1: Auto-fill profilepic/coverpic from GitHub ---
+  if (!user.profilepic || !user.coverpic) {
+    try {
+      const res = await fetch(`https://api.github.com/users/${username}`);
+      if (res.ok) {
+        const data = await res.json();
+
+        // Only fill if missing
+        user.profilepic = user.profilepic || data.avatar_url;
+        user.coverpic =
+          user.coverpic || `https://opengraph.githubassets.com/1/${username}`;
+
+        // Update DB, but only overwrite missing fields
+        await User.updateOne(
+          { username },
+          { profilepic: user.profilepic, coverpic: user.coverpic }
+        );
+      }
+    } catch (err) {
+      console.error("GitHub fetch failed:", err);
+
+      // Safe fallback
+      user.profilepic = user.profilepic || "/avatar.gif";
+      user.coverpic = user.coverpic || "/default-cover.jpg";
+    }
+  }
+
+  // --- Step 2: Auto-fill Razorpay keys if missing ---
+  user.razorpayid =
+    user.razorpayid ||
+    (process.env.RAZORPAY_ENV === "live"
+      ? process.env.RAZORPAY_LIVE_KEY_ID
+      : process.env.RAZORPAY_TEST_KEY_ID);
+
+  user.razorpaysecret =
+    user.razorpaysecret ||
+    (process.env.RAZORPAY_ENV === "live"
+      ? process.env.RAZORPAY_LIVE_KEY_SECRET
+      : process.env.RAZORPAY_TEST_KEY_SECRET);
+
+  // Update DB only if empty
+  await User.updateOne(
+    { username },
+    { razorpayid: user.razorpayid, razorpaysecret: user.razorpaysecret }
+  );
+
   return JSON.parse(JSON.stringify(user));
 };
+
 
 export const fetchpayments = async (username) => {
   await connectDB();

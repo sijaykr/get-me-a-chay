@@ -17,6 +17,8 @@ export const authoptions =  NextAuth({
         clientId: process.env.GITHUB_ID,
         clientSecret: process.env.GITHUB_SECRET
       }),
+  
+
     //   AppleProvider({
     //     clientId: process.env.APPLE_ID,
     //     clientSecret: process.env.APPLE_SECRET
@@ -35,6 +37,7 @@ export const authoptions =  NextAuth({
     //     from: 'NextAuth.js <no-reply@example.com>'
     //   }),
     ],
+ 
     callbacks: {
       async signIn({ user, account, profile, email, credentials }) {
          if(account.provider == "github") { 

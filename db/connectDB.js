@@ -1,14 +1,23 @@
 import mongoose from "mongoose";
 
 const connectDB = async () => {
-  if (mongoose?.connection?.readyState >= 1) return;
+  // If already connected, reuse connection
+  if (mongoose.connection.readyState >= 1) return;
 
   try {
-    await mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/chai");
+    await mongoose.connect(process.env.MONGODB_URI, {
+      dbName: process.env.MONGODB_DB || "chai",
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log("✅ MongoDB Connected");
   } catch (err) {
+    console.error("❌ MongoDB Connection Failed:", err);
   }
 };
 
 export default connectDB;
-export const runtime = "nodejs"; // optional but okay
-export const dynamic = "force-dynamic"; // optional but okay, ensures no caching
+
+// Optional Vercel hints
+export const runtime = "nodejs"; 
+export const dynamic = "force-dynamic"; 

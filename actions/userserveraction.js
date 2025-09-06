@@ -7,18 +7,12 @@ import User from "@/models/User";
 import mongoose from "mongoose";
 
 export const initiate = async (amount, to_username, paymentform) => {
-
   await connectDB();
 
-  const collections = await mongoose.connection.db.listCollections().toArray();
-
   const user = await User.findOne({ username: to_username });
+  if (!user) throw new Error(`User not found: ${to_username}`);
 
-  if (!user) {
-    throw new Error(`User not found: ${to_username}`);
-  }
-
-  const mode = process.env.RAZORPAY_ENV || "test"; // fallback to "test"
+  const mode = process.env.RAZORPAY_ENV || "test";
 
   const razorpayId =
     mode === "live"
@@ -30,21 +24,13 @@ export const initiate = async (amount, to_username, paymentform) => {
       ? user.razorpaysecret || process.env.RAZORPAY_LIVE_KEY_SECRET
       : process.env.RAZORPAY_TEST_KEY_SECRET;
 
-
   if (!razorpayId || !razorpaySecret) {
     throw new Error(`Razorpay credentials not found for user: ${to_username}`);
   }
 
-  const razorpay = new Razorpay({
-    key_id: razorpayId,
-    key_secret: razorpaySecret,
-  });
+  const razorpay = new Razorpay({ key_id: razorpayId, key_secret: razorpaySecret });
 
-  const options = {
-    amount: Number(amount),
-    currency: "INR",
-    receipt: `receipt_${Date.now()}`,
-  };
+  const options = { amount: Number(amount), currency: "INR", receipt: `receipt_${Date.now()}` };
 
   const order = await razorpay.orders.create(options);
 
@@ -63,22 +49,17 @@ export const fetchuser = async (username) => {
   await connectDB();
 
   let user = await User.findOne({ username }).lean();
-
   if (!user) throw new Error("User not found");
 
-  // --- Step 1: Auto-fill profilepic/coverpic from GitHub ---
+  // ✅ Minimal: fill missing GitHub profile / cover
   if (!user.profilepic || !user.coverpic) {
     try {
       const res = await fetch(`https://api.github.com/users/${username}`);
       if (res.ok) {
         const data = await res.json();
-
-        // Only fill if missing
         user.profilepic = user.profilepic || data.avatar_url;
-        user.coverpic =
-          user.coverpic || `https://opengraph.githubassets.com/1/${username}`;
+        user.coverpic = user.coverpic || `https://opengraph.githubassets.com/1/${username}`;
 
-        // Update DB, but only overwrite missing fields
         await User.updateOne(
           { username },
           { profilepic: user.profilepic, coverpic: user.coverpic }
@@ -86,14 +67,12 @@ export const fetchuser = async (username) => {
       }
     } catch (err) {
       console.error("GitHub fetch failed:", err);
-
-      // Safe fallback
       user.profilepic = user.profilepic || "/avatar.gif";
       user.coverpic = user.coverpic || "/default-cover.jpg";
     }
   }
 
-  // --- Step 2: Auto-fill Razorpay keys if missing ---
+  // ✅ Minimal: fill missing Razorpay keys
   user.razorpayid =
     user.razorpayid ||
     (process.env.RAZORPAY_ENV === "live"
@@ -106,7 +85,6 @@ export const fetchuser = async (username) => {
       ? process.env.RAZORPAY_LIVE_KEY_SECRET
       : process.env.RAZORPAY_TEST_KEY_SECRET);
 
-  // Update DB only if empty
   await User.updateOne(
     { username },
     { razorpayid: user.razorpayid, razorpaysecret: user.razorpaysecret }
@@ -114,7 +92,6 @@ export const fetchuser = async (username) => {
 
   return JSON.parse(JSON.stringify(user));
 };
-
 
 export const fetchpayments = async (username) => {
   await connectDB();
@@ -133,11 +110,10 @@ export const updateProfile = async (data, oldusername) => {
 
   if (oldusername !== ndata.username) {
     const existingUser = await User.findOne({ username: ndata.username });
-    if (existingUser) {
-      return { error: "Username already exists" };
-    }
+    if (existingUser) return { error: "Username already exists" };
+
     await User.updateOne({ email: ndata.email }, ndata);
-await Payment.updateMany({ to_username: oldusername }, { to_username: ndata.username });
+    await Payment.updateMany({ to_username: oldusername }, { to_username: ndata.username });
   } else {
     await User.updateOne({ email: ndata.email }, ndata);
   }

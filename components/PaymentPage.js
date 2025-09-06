@@ -28,6 +28,7 @@ const PaymentPage = ({ username }) => {
     script.onerror = () => console.error("Failed to load Razorpay SDK");
     document.body.appendChild(script);
   }, []);
+  
 
   // Fetch user & payment data
   const getData = useCallback(async () => {
@@ -84,7 +85,9 @@ const PaymentPage = ({ username }) => {
         description: "Support your favorite creator",
         image: currentUser.profilepic || `https://avatars.githubusercontent.com/u/1967963?v=4`,
         order_id: orderId,
-        callback_url: `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/api/razorpay`,
+        //callback_url: `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/api/razorpay`,
+        callback_url: `${process.env.NEXT_PUBLIC_URL}/api/razorpay`,
+
         prefill: {
           name: paymentform.name,
           email: "email@example.com",
